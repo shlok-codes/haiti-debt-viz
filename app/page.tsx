@@ -1,65 +1,259 @@
-import Image from "next/image";
+"use client";
 
-export default function Home() {
-  return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
+import { useEffect, useState } from "react";
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+  ReferenceLine,
+} from "recharts";
+
+type DebtRow = {
+  year: number;
+  phase: string;
+  outstanding_francs: string | number | null;
+  payments_francs: string | number | null;
+  payments_2021_usd: string | number | null;
+  notes: string | null;
+};
+
+type NormalizedRow = {
+  year: number;
+  phase: string;
+  outstanding_francs: number;
+  payments_francs: number;
+  payments_2021_usd: number | null;
+  notes: string | null;
+};
+
+export default function HomePage() {
+  const [data, setData] = useState<NormalizedRow[]>([]);
+  const [selectedYear, setSelectedYear] = useState<number | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function load() {
+      try {
+        const res = await fetch("/api/debt");
+        if (!res.ok) {
+          throw new Error("Failed to load data");
+        }
+        const raw = (await res.json()) as DebtRow[];
+
+        const normalized: NormalizedRow[] = raw.map((row) => ({
+          year: row.year,
+          phase: row.phase,
+          outstanding_francs: row.outstanding_francs
+            ? Number(row.outstanding_francs)
+            : 0,
+          payments_francs: row.payments_francs
+            ? Number(row.payments_francs)
+            : 0,
+          payments_2021_usd: row.payments_2021_usd
+            ? Number(row.payments_2021_usd)
+            : null,
+          notes: row.notes,
+        }));
+
+        normalized.sort((a, b) => a.year - b.year);
+        setData(normalized);
+        if (normalized.length > 0) {
+          setSelectedYear(normalized[0].year);
+        }
+      } catch (err: any) {
+        console.error(err);
+        setError(err.message ?? "Unknown error");
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    load();
+  }, []);
+
+  if (loading) {
+    return (
+      <main className="min-h-screen flex items-center justify-center bg-slate-950 text-slate-100">
+        <p className="text-lg">Loading data…</p>
+      </main>
+    );
+  }
+
+  if (error || data.length === 0) {
+    return (
+      <main className="min-h-screen flex items-center justify-center bg-slate-950 text-slate-100">
+        <div className="max-w-lg text-center">
+          <h1 className="text-2xl font-semibold mb-4">
+            Something went wrong.
           </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+          <p className="text-sm text-slate-300 mb-2">{error}</p>
+          <p className="text-xs text-slate-500">
+            Check that your database is seeded and the /api/debt route works.
           </p>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
       </main>
-    </div>
+    );
+  }
+
+  const minYear = data[0].year;
+  const maxYear = data[data.length - 1].year;
+  const currentYear =
+    selectedYear ?? data[0].year;
+  const currentRow =
+    data.find((row) => row.year === currentYear) ?? data[0];
+
+  return (
+    <main className="min-h-screen bg-slate-950 text-slate-100 flex flex-col items-center px-4 py-8">
+      <div className="w-full max-w-5xl space-y-8">
+        {/* Header */}
+        <header className="space-y-2">
+          <h1 className="text-3xl md:text-4xl font-semibold">
+            Haiti&apos;s Independence Debt Over Time
+          </h1>
+          <p className="text-slate-300 max-w-2xl text-sm md:text-base">
+            Explore Haiti&apos;s colonial indemnity and related &quot;double
+            debt&quot; from 1804 to 1947. Use the slider to move through time
+            and see annual payments and outstanding balances.
+          </p>
+        </header>
+
+        {/* Slider + selected year card */}
+        <section className="grid gap-6 md:grid-cols-[2fr,1fr] items-center">
+          <div className="space-y-4">
+            <label className="text-xs uppercase tracking-wide text-slate-400">
+              Year: <span className="text-slate-100">{currentYear}</span>
+            </label>
+            <input
+              type="range"
+              min={minYear}
+              max={maxYear}
+              value={currentYear}
+              onChange={(e) => setSelectedYear(Number(e.target.value))}
+              className="w-full accent-emerald-400"
+            />
+            <div className="flex justify-between text-xs text-slate-500">
+              <span>{minYear}</span>
+              <span>{maxYear}</span>
+            </div>
+          </div>
+
+          <div className="border border-slate-800 bg-slate-900/70 rounded-xl p-4 space-y-2">
+            <h2 className="text-lg font-semibold">
+              {currentYear} — {currentRow.phase}
+            </h2>
+            <dl className="text-sm space-y-1">
+              <div className="flex justify-between gap-4">
+                <dt className="text-slate-400">Payments (francs)</dt>
+                <dd className="font-mono">
+                  {currentRow.payments_francs.toLocaleString("en-US", {
+                    maximumFractionDigits: 0,
+                  })}
+                </dd>
+              </div>
+              <div className="flex justify-between gap-4">
+                <dt className="text-slate-400">Outstanding (francs)</dt>
+                <dd className="font-mono">
+                  {currentRow.outstanding_francs.toLocaleString("en-US", {
+                    maximumFractionDigits: 0,
+                  })}
+                </dd>
+              </div>
+              <div className="flex justify-between gap-4">
+                <dt className="text-slate-400">2021 USD (approx.)</dt>
+                <dd className="font-mono">
+                  {currentRow.payments_2021_usd
+                    ? currentRow.payments_2021_usd.toLocaleString("en-US", {
+                        maximumFractionDigits: 0,
+                      })
+                    : "—"}
+                </dd>
+              </div>
+            </dl>
+            {currentRow.notes && (
+              <p className="text-xs text-slate-400 mt-2">
+                {currentRow.notes}
+              </p>
+            )}
+          </div>
+        </section>
+
+        {/* Chart */}
+        <section className="border border-slate-800 bg-slate-900/70 rounded-xl p-4 md:p-6">
+          <h2 className="text-sm md:text-base font-semibold mb-4">
+            Payments & Outstanding Balance Over Time
+          </h2>
+          <div className="h-72 md:h-96">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={data}>
+                <XAxis
+                  dataKey="year"
+                  tick={{ fontSize: 10, fill: "#94a3b8" }}
+                  stroke="#64748b"
+                />
+                <YAxis
+                  tick={{ fontSize: 10, fill: "#94a3b8" }}
+                  stroke="#64748b"
+                  tickFormatter={(v) =>
+                    v >= 1_000_000 ? `${Math.round(v / 1_000_000)}M` : v
+                  }
+                />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: "#020617",
+                    border: "1px solid #1e293b",
+                    borderRadius: "0.5rem",
+                    fontSize: "0.75rem",
+                  }}
+                  labelStyle={{ color: "#e2e8f0" }}
+                  formatter={(value: any, name: any) => {
+                    const label =
+                      name === "payments_francs"
+                        ? "Payments (francs)"
+                        : name === "outstanding_francs"
+                        ? "Outstanding (francs)"
+                        : name;
+                    return [
+                      Number(value).toLocaleString("en-US", {
+                        maximumFractionDigits: 0,
+                      }),
+                      label,
+                    ];
+                  }}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="payments_francs"
+                  stroke="#22c55e"
+                  strokeWidth={2}
+                  dot={false}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="outstanding_francs"
+                  stroke="#38bdf8"
+                  strokeWidth={2}
+                  dot={false}
+                />
+                <ReferenceLine
+                  x={currentYear}
+                  stroke="#f97316"
+                  strokeDasharray="3 3"
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+          <p className="mt-3 text-xs text-slate-400">
+            Green line shows annual payments; blue line shows remaining
+            outstanding balance on the &quot;double debt&quot; where data is
+            available. Years before 1825 and after the debt is paid use
+            placeholders (0), documented in the notes.
+          </p>
+        </section>
+      </div>
+    </main>
   );
 }

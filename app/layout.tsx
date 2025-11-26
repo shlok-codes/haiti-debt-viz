@@ -24,10 +24,26 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
-        {children}
+      <body className="bg-slate-950 text-slate-100">
+        <header className="border-b border-slate-800 bg-slate-950/80 backdrop-blur">
+          <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3">
+            <a href="/" className="text-sm font-semibold">
+              Haiti Debt Timeline
+            </a>
+            <nav className="flex gap-4 text-xs text-slate-300">
+              <a href="/" className="hover:text-emerald-400">
+                Visualization
+              </a>
+              <a href="/history" className="hover:text-emerald-400">
+                History
+              </a>
+              <a href="/sources" className="hover:text-emerald-400">
+                Sources
+              </a>
+            </nav>
+          </div>
+        </header>
+        <main>{children}</main>
       </body>
     </html>
   );
