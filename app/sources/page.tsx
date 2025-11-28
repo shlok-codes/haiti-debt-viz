@@ -65,7 +65,7 @@ export default function SourcesPage() {
             </li>
           </ul>
           <p className="text-xs text-slate-400">
-            Exact citations can be expanded later if you want to list specific
+            Pending: Exact citations will be expanded in the future you to list specific
             books and articles by author and year.
           </p>
         </section>
