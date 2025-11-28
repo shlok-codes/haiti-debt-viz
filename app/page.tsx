@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { motion } from "framer-motion";
 import {
   LineChart,
   Line,
@@ -9,6 +10,7 @@ import {
   Tooltip,
   ResponsiveContainer,
   ReferenceLine,
+  CartesianGrid,
 } from "recharts";
 
 type DebtRow = {
@@ -108,7 +110,12 @@ export default function HomePage() {
 
   return (
     <main className="min-h-screen bg-slate-950 text-slate-100 flex flex-col items-center px-4 py-8">
-      <div className="w-full max-w-5xl space-y-8">
+      <motion.div
+        className="w-full max-w-5xl space-y-8"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6 }}
+      >
         {/* Header */}
         <header className="space-y-2">
           <h1 className="text-3xl md:text-4xl font-semibold">
@@ -141,7 +148,12 @@ export default function HomePage() {
             </div>
           </div>
 
-          <div className="border border-slate-800 bg-slate-900/70 rounded-xl p-4 space-y-2">
+          <motion.div
+            className="border border-slate-800 bg-slate-900/70 rounded-xl p-4 space-y-2"
+            initial={{ opacity: 0, scale: 0.98 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.4, delay: 0.1 }}
+          >
             <h2 className="text-lg font-semibold">
               {currentYear} — {currentRow.phase}
             </h2>
@@ -178,37 +190,48 @@ export default function HomePage() {
                 {currentRow.notes}
               </p>
             )}
-          </div>
+          </motion.div>
         </section>
 
         {/* Chart */}
-        <section className="border border-slate-800 bg-slate-900/70 rounded-xl p-4 md:p-6">
+        <motion.section
+          className="border border-slate-800 bg-slate-900/80 rounded-2xl p-5 md:p-7 shadow-inner"
+          initial={{ opacity: 0, scale: 0.98 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.45, delay: 0.15 }}
+        >
           <h2 className="text-sm md:text-base font-semibold mb-4">
             Payments & Outstanding Balance Over Time
           </h2>
           <div className="h-72 md:h-96">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={data}>
+                <CartesianGrid stroke="#1f2937" strokeDasharray="3 3" />
                 <XAxis
                   dataKey="year"
                   tick={{ fontSize: 10, fill: "#94a3b8" }}
-                  stroke="#64748b"
+                  stroke="#475569"
+                  tickLine={{ stroke: "#475569" }}
+                  axisLine={{ stroke: "#475569" }}
                 />
                 <YAxis
                   tick={{ fontSize: 10, fill: "#94a3b8" }}
-                  stroke="#64748b"
+                  stroke="#475569"
+                  tickLine={{ stroke: "#475569" }}
+                  axisLine={{ stroke: "#475569" }}
                   tickFormatter={(v) =>
                     v >= 1_000_000 ? `${Math.round(v / 1_000_000)}M` : v
                   }
                 />
                 <Tooltip
                   contentStyle={{
-                    backgroundColor: "#020617",
+                    backgroundColor: "#0b1224",
                     border: "1px solid #1e293b",
                     borderRadius: "0.5rem",
-                    fontSize: "0.75rem",
+                    fontSize: "0.9rem",
+                    color: "#e2e8f0",
                   }}
-                  labelStyle={{ color: "#e2e8f0" }}
+                  labelStyle={{ color: "#e2e8f0", fontSize: "0.9rem" }}
                   formatter={(value: any, name: any) => {
                     const label =
                       name === "payments_francs"
@@ -252,8 +275,8 @@ export default function HomePage() {
             available. Years before 1825 and after the debt is paid use
             placeholders (0), documented in the notes.
           </p>
-        </section>
-      </div>
+        </motion.section>
+      </motion.div>
     </main>
   );
 }
