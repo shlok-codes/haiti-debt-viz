@@ -44,6 +44,15 @@ export default function RootLayout({
           </div>
         </header>
         <main>{children}</main>
+        <footer className="border-t border-slate-800 bg-slate-950">
+          <div className="mx-auto max-w-5xl px-4 py-4">
+            <p className="text-xs text-slate-400">
+              Built by Shlok as a learning project. Data derived from The New
+              York Times &ldquo;The Ransom&rdquo; investigation and published
+              historical research.
+            </p>
+          </div>
+        </footer>
       </body>
     </html>
   );
